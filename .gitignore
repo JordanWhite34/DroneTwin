@@ -1,0 +1,47 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+.venv/
+venv/
+.env
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Data - do not commit datasets or generated outputs
+data/raw/
+data/processed/
+outputs/
+
+# COLMAP outputs
+*.db
+database.db
+sparse/
+dense/
+stereo/
+*.bin
+*.geometric.bin
+*.photometric.bin
+
+# Large 3D files
+*.ply
+*.las
+*.laz
+*.obj
+*.stl
+*.glb
+*.gltf
+
+# Images/videos generated for demos
+*.mp4
+*.mov
+*.avi
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
