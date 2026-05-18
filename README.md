@@ -1,6 +1,3 @@
-Here’s a solid starter `README.md`:
-
-````md
 # Quarry Digital Twin
 
 This project builds a 3D digital twin of a quarry from drone imagery using photogrammetry, point cloud processing, and eventually machine learning.
@@ -253,10 +250,3 @@ Final version should demonstrate:
 * Segmentation of meaningful scene regions
 * Clear visual demo
 * Well-documented engineering decisions
-
-## Resume Summary Draft
-
-Built a quarry digital twin pipeline that reconstructs 3D scenes from drone imagery using COLMAP, processes and cleans point clouds with Open3D, and extracts spatial measurements for scene analysis and inspection workflows.
-
-```
-```
