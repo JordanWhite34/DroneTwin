@@ -1,4 +1,6 @@
 import subprocess
+import argparse
+import shutil
 from pathlib import Path
 
 COLMAP = Path(r"C:\Tools\COLMAP\COLMAP.bat")
@@ -12,9 +14,32 @@ DATABASE_PATH = PROCESSED_DIR / "database.db"
 SPARSE_DIR = PROCESSED_DIR / "sparse"
 DENSE_DIR = PROCESSED_DIR / "dense"
 
-PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
-SPARSE_DIR.mkdir(parents=True, exist_ok=True)
-DENSE_DIR.mkdir(parents=True, exist_ok=True)
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Run the COLMAP reconstruction pipeline."
+    )
+    parser.add_argument(
+        "--clean",
+        action="store_true",
+        help="Delete previous COLMAP outputs before running.",
+    )
+    return parser.parse_args()
+
+
+def clean_outputs() -> None:
+    for path in [DATABASE_PATH, SPARSE_DIR, DENSE_DIR]:
+        if path.is_dir():
+            print(f"Removing directory: {path}")
+            shutil.rmtree(path)
+        elif path.exists():
+            print(f"Removing file: {path}")
+            path.unlink()
+
+
+def prepare_output_dirs() -> None:
+    PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
+    SPARSE_DIR.mkdir(parents=True, exist_ok=True)
+    DENSE_DIR.mkdir(parents=True, exist_ok=True)
 
 # helper function to run commands we pass in and print their results
 def run_colmap(args: list[str]) -> None:
@@ -38,89 +63,101 @@ def run_colmap(args: list[str]) -> None:
 
     print(result.stdout)
 
-# extract features on GPU
-run_colmap([
-    "feature_extractor",
-    "--database_path", str(DATABASE_PATH),
-    "--image_path", str(IMAGE_DIR),
+def main() -> None:
+    args = parse_args()
 
-    "--ImageReader.single_camera", "1",
-    "--ImageReader.camera_model", "SIMPLE_RADIAL",
+    if args.clean:
+        clean_outputs()
 
-    "--FeatureExtraction.use_gpu", "1",
-    "--FeatureExtraction.gpu_index", "0",
-])
+    prepare_output_dirs()
 
-# matcher
-run_colmap([
-    "sequential_matcher",
-    "--database_path", str(DATABASE_PATH),
+    # extract features on GPU
+    run_colmap([
+        "feature_extractor",
+        "--database_path", str(DATABASE_PATH),
+        "--image_path", str(IMAGE_DIR),
 
-    "--FeatureMatching.use_gpu", "1",
-    "--FeatureMatching.gpu_index", "0",
-])
+        "--ImageReader.single_camera", "1",
+        "--ImageReader.camera_model", "SIMPLE_RADIAL",
 
-# mapper
-run_colmap([
-    "mapper",
-    "--database_path", str(DATABASE_PATH),
-    "--image_path", str(IMAGE_DIR),
-    "--output_path", str(SPARSE_DIR)
-])
+        "--FeatureExtraction.use_gpu", "1",
+        "--FeatureExtraction.gpu_index", "0",
+    ])
 
-# image undistorter
-run_colmap([
-    "image_undistorter",
-    "--image_path", str(IMAGE_DIR),
-    "--input_path", str(SPARSE_DIR) / "0",
-    "--output_path", str(DENSE_DIR),
-    "--output_type", str(COLMAP), 
-    "--max_image_size", "2000"
-])
+    # matcher
+    run_colmap([
+        "sequential_matcher",
+        "--database_path", str(DATABASE_PATH),
 
-# patch match stereo
-run_colmap([
-    "patch_match_stereo",
-    "--workspace_path", str(DENSE_DIR),
-    "--workspace_format", str(COLMAP),
-    "--PatchMatchStereo.geomconsistency", "true",
-])
+        "--FeatureMatching.use_gpu", "1",
+        "--FeatureMatching.gpu_index", "0",
+    ])
 
-# stereo fusion
-run_colmap([
-    "stereo_fusion",
-    "--workspace_path", str(DENSE_DIR),
-    "--workspace_format", str(COLMAP),
-    "--input_type", "geometric",
-    "--output_path", str(DENSE_DIR) / "fused.ply"
-])
+    # mapper
+    run_colmap([
+        "mapper",
+        "--database_path", str(DATABASE_PATH),
+        "--image_path", str(IMAGE_DIR),
+        "--output_path", str(SPARSE_DIR)
+    ])
 
-# poisson mesher
-run_colmap([
-    "poisson_mesher",
-    "--input_path", str(DENSE_DIR) / "fused.ply",
-    "--output_path", str(DENSE_DIR) / "meshed-poisson.ply"
-])
+    # image undistorter
+    run_colmap([
+        "image_undistorter",
+        "--image_path", str(IMAGE_DIR),
+        "--input_path", str(SPARSE_DIR / "0"),
+        "--output_path", str(DENSE_DIR),
+        "--output_type", "COLMAP",
+        "--max_image_size", "2000"
+    ])
 
-# delaunay mesher
-run_colmap([
-    "delaunay_mesher",
-    "--input_path", str(DENSE_DIR),
-    "--output_path", str(DENSE_DIR) / "meshed-delaunay.ply"
-])
+    # patch match stereo
+    run_colmap([
+        "patch_match_stereo",
+        "--workspace_path", str(DENSE_DIR),
+        "--workspace_format", "COLMAP",
+        "--PatchMatchStereo.geomconsistency", "true",
+    ])
 
-# simplify mesh to reduce its size
-run_colmap([
-    "mesh_simplifier",
-    "--input_path", str(DENSE_DIR) / "meshed-poisson.ply",
-    "--output_path", str(DENSE_DIR) / "meshed-poisson-simplified.ply",
-    "--MeshSimplification.target_face_ratio", "0.25"
-])
+    # stereo fusion
+    run_colmap([
+        "stereo_fusion",
+        "--workspace_path", str(DENSE_DIR),
+        "--workspace_format", "COLMAP",
+        "--input_type", "geometric",
+        "--output_path", str(DENSE_DIR / "fused.ply")
+    ])
 
-# texture a meshg using the undistorted images
-run_colmap([
-    "mesh_texturer",
-    "--workspace_path", str(DENSE_DIR),
-    "--input_path", str(DENSE_DIR) / "meshed-poisson.ply",
-    "--output_path", str(DENSE_DIR) / "textured",
-])
+    # poisson mesher
+    run_colmap([
+        "poisson_mesher",
+        "--input_path", str(DENSE_DIR / "fused.ply"),
+        "--output_path", str(DENSE_DIR / "meshed-poisson.ply")
+    ])
+
+    # delaunay mesher
+    run_colmap([
+        "delaunay_mesher",
+        "--input_path", str(DENSE_DIR),
+        "--output_path", str(DENSE_DIR / "meshed-delaunay.ply")
+    ])
+
+    # simplify mesh to reduce its size
+    run_colmap([
+        "mesh_simplifier",
+        "--input_path", str(DENSE_DIR / "meshed-poisson.ply"),
+        "--output_path", str(DENSE_DIR / "meshed-poisson-simplified.ply"),
+        "--MeshSimplification.target_face_ratio", "0.25"
+    ])
+
+    # texture a mesh using the undistorted images
+    run_colmap([
+        "mesh_texturer",
+        "--workspace_path", str(DENSE_DIR),
+        "--input_path", str(DENSE_DIR / "meshed-poisson.ply"),
+        "--output_path", str(DENSE_DIR / "textured"),
+    ])
+
+
+if __name__ == "__main__":
+    main()
