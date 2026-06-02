@@ -228,10 +228,10 @@ This section will eventually include:
 
 Current status:
 
-* [ ] Dataset organized
-* [ ] COLMAP sparse reconstruction
-* [ ] COLMAP dense reconstruction
-* [ ] Raw point cloud exported
+* [x] Dataset organized
+* [x] COLMAP sparse reconstruction
+* [x] COLMAP dense reconstruction
+* [x] Raw point cloud exported
 * [ ] Point cloud viewed in Open3D
 * [ ] Point cloud cleaned
 * [ ] Basic spatial analysis
