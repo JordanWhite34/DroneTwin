@@ -116,7 +116,8 @@ def main() -> None:
         "patch_match_stereo",
         "--workspace_path", str(DENSE_DIR),
         "--workspace_format", "COLMAP",
-        "--PatchMatchStereo.geomconsistency", "true",
+        "--PatchMatchStereo.geom_consistency", "1",
+        "--PatchMatchStereo.gpu_index", "0",
     ])
 
     # stereo fusion
