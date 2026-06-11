@@ -232,9 +232,9 @@ Current status:
 * [x] COLMAP sparse reconstruction
 * [x] COLMAP dense reconstruction
 * [x] Raw point cloud exported
-* [ ] Point cloud viewed in Open3D
-* [ ] Point cloud cleaned
-* [ ] Basic spatial analysis
+* [x] Point cloud viewed in Open3D
+* [x] Point cloud cleaned
+* [x] Basic spatial analysis
 * [ ] Segmentation
 * [ ] Demo video/writeup
 

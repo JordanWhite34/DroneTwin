@@ -126,14 +126,18 @@ def main() -> None:
         "--workspace_path", str(DENSE_DIR),
         "--workspace_format", "COLMAP",
         "--input_type", "geometric",
-        "--output_path", str(DENSE_DIR / "fused.ply")
+        "--StereoFusion.min_num_pixels", "2",
+        "--StereoFusion.max_reproj_error", "4",
+        "--StereoFusion.max_depth_error", "0.03",
+        "--StereoFusion.max_normal_error", "30",
+        "--output_path", str(DENSE_DIR / "fused-keep-more.ply"),
     ])
 
     # poisson mesher
     run_colmap([
         "poisson_mesher",
-        "--input_path", str(DENSE_DIR / "fused.ply"),
-        "--output_path", str(DENSE_DIR / "meshed-poisson.ply")
+        "--input_path", str(DENSE_DIR / "fused-keep-more.ply"),
+        "--output_path", str(DENSE_DIR / "meshed-poisson-improved.ply")
     ])
 
     # delaunay mesher
