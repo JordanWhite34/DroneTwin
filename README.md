@@ -1,252 +1,121 @@
 # Quarry Digital Twin
 
-This project builds a 3D digital twin of a quarry from drone imagery using photogrammetry, point cloud processing, and eventually machine learning.
+This project builds a 3D digital twin of a quarry from drone imagery using
+COLMAP, Open3D, and transparent geometry-based point-cloud processing.
 
-The goal is to turn raw drone images into a cleaned, explorable 3D scene that can be measured, analyzed, segmented, and used for spatial intelligence tasks.
+The current goal is a clean, inspectable pipeline:
 
-## Project Goal
-
-Build an end-to-end pipeline for:
-
-1. Reconstructing a quarry from drone images
-2. Cleaning and processing the generated point cloud
-3. Extracting useful spatial measurements
-4. Segmenting meaningful regions of the scene
-5. Adding ML-based point cloud understanding later
-6. Packaging the results into a clear portfolio demo
-
-## Why This Project
-
-This project is meant to showcase skills in:
-
-- Computer vision
-- Photogrammetry
-- 3D reconstruction
-- Point cloud processing
-- Open3D
-- COLMAP
-- Spatial analysis
-- 3D machine learning
-
-The long-term goal is to build experience relevant to roles in 3D perception, digital twins, robotics, drone intelligence, and infrastructure inspection.
+```text
+drone images
+  -> COLMAP dense reconstruction
+  -> point-cloud cleanup
+  -> spatial analysis
+  -> ground / non-ground split
+  -> non-ground surface regions
+  -> coarse semantic classes
+```
 
 ## Pipeline
 
+Run the stages in this order from the project root:
+
+```powershell
+conda run -n drone-twin python scripts\clean_point_cloud.py
+conda run -n drone-twin python scripts\analyze_point_cloud.py
+conda run -n drone-twin python scripts\segment_point_cloud.py
+conda run -n drone-twin python scripts\region_grow_non_ground.py --proxy-output default
+conda run -n drone-twin python scripts\classify_regions.py --view
+```
+
+`segment_point_cloud.py` writes:
+
 ```text
-Drone Images
-    ↓
-COLMAP Reconstruction
-    ↓
-Sparse Point Cloud
-    ↓
-Dense Point Cloud
-    ↓
-Open3D Processing
-    ↓
-Cleaned Point Cloud
-    ↓
-Spatial Analysis + Segmentation
-    ↓
-Interactive / Visual Demo
-````
+data\processed\dense\ground.ply
+data\processed\dense\non_ground.ply
+```
 
-## Current Scope
+`region_grow_non_ground.py` writes:
 
-The first version of this project focuses on getting a working reconstruction pipeline.
+```text
+data\processed\dense\non_ground_regions.ply
+data\processed\dense\non_ground_regions_proxy.ply
+data\processed\dense\non_ground_region_labels.npz
+```
 
-### Stage 1: Reconstruction
+`classify_regions.py` writes:
 
-Use COLMAP to reconstruct the quarry from drone images.
+```text
+data\processed\dense\semantic_classes.ply
+data\processed\dense\non_ground_semantic_classes.ply
+data\processed\dense\region_class_report.csv
+data\processed\dense\semantic_class_legend.csv
+```
 
-Deliverables:
+## Semantic Classes
 
-* Sparse reconstruction
-* Dense reconstruction
-* Point cloud export
-* Basic visualization
+The semantic classifier is intentionally rule-based and inspectable. It computes
+simple region features, scores each class, then applies dominance multipliers:
 
-### Stage 2: Point Cloud Cleanup
+```powershell
+conda run -n drone-twin python scripts\classify_regions.py --view `
+  --ground-dominance 1.0 `
+  --tree-dominance 1.8 `
+  --building-dominance 1.0 `
+  --other-dominance 0.6
+```
 
-Use Open3D to improve the raw point cloud.
+Water classification is disabled by default because the current scene does not
+contain water. Enable it explicitly only for datasets where water is expected:
 
-Planned processing steps:
-
-* Downsampling
-* Statistical outlier removal
-* Radius outlier removal
-* Normal estimation
-* Cleaned point cloud export
-
-### Stage 3: Spatial Analysis
-
-Extract useful information from the scene.
-
-Planned features:
-
-* Scene dimensions
-* Height range
-* Bounding box
-* Elevation-based coloring
-* Basic region clustering
-
-### Stage 4: Segmentation
-
-Segment the quarry into meaningful regions.
-
-Initial approach:
-
-* Geometry-based segmentation
-* Height-based regions
-* Ground vs elevated areas
-* Steep quarry walls
-* Noisy/vegetation-like regions
-
-Later approach:
-
-* ML-based point cloud segmentation using a labeled dataset
-
-### Stage 5: Machine Learning
-
-Add point cloud ML after the core pipeline works.
-
-Possible future work:
-
-* Train a segmentation model on a labeled point cloud dataset
-* Compare classical geometry-based segmentation with ML segmentation
-* Apply a trained model to the reconstructed quarry point cloud
+```powershell
+conda run -n drone-twin python scripts\classify_regions.py --enable-water --view
+```
 
 ## Repository Structure
 
 ```text
-quarry-digital-twin/
-│
-├── README.md
-├── requirements.txt
-├── .gitignore
-│
-├── data/
-│   ├── raw/          # original quarry images, not committed
-│   └── processed/    # generated point clouds/results, not committed
-│
-├── scripts/
-│   ├── run_colmap.py
-│   └── view_point_cloud.py
-│
-└── notes/
-    └── dataset.md
+scripts/
+  run_colmap.py              # COLMAP reconstruction wrapper
+  clean_point_cloud.py       # cleanup and downsampling
+  analyze_point_cloud.py     # basic spatial statistics and visualization
+  segment_point_cloud.py     # ground / non-ground split
+  region_grow_non_ground.py  # surface-region extraction
+  classify_regions.py        # coarse semantic classification
+
+data/
+  raw/                       # source imagery, not committed
+  processed/                 # generated point clouds/results, not committed
 ```
-
-## Data
-
-The dataset is not committed to this repository.
-
-Place raw quarry images here:
-
-```text
-data/raw/quarry/images/
-```
-
-Generated outputs should go here:
-
-```text
-data/processed/quarry/
-```
-
-More dataset details should be documented in:
-
-```text
-notes/dataset.md
-```
-
-## Tools
-
-Primary tools:
-
-* Python
-* COLMAP
-* Open3D
-* NumPy
-* OpenCV
-* Matplotlib
-
-Future tools may include:
-
-* PyTorch
-* Open3D-ML
-* PointNet++
-* Potree / Three.js / other 3D viewers
 
 ## Setup
 
-Create a Python environment:
+Create the environment:
 
-```bash
+```powershell
 conda create -n drone-twin python=3.10
 conda activate drone-twin
-```
-
-Install Python dependencies:
-
-```bash
 pip install -r requirements.txt
 ```
 
 COLMAP should be installed separately and available from the command line.
 
-Check COLMAP:
-
-```bash
-colmap -h
-```
-
-## First Milestone
-
-The first milestone is simple:
-
-> Run COLMAP on the quarry image dataset and generate a viewable sparse or dense point cloud.
-
-Success looks like:
-
-* COLMAP runs without errors
-* Images are registered
-* A sparse reconstruction is created
-* A dense point cloud is generated
-* The point cloud can be opened and viewed
-
-## Planned Results
-
-This section will eventually include:
-
-* Sparse reconstruction screenshot
-* Dense point cloud screenshot
-* Before/after cleanup comparison
-* Segmented point cloud visualization
-* Demo video
-* Summary of reconstruction quality
-
 ## Project Status
 
 Current status:
 
-* [x] Dataset organized
-* [x] COLMAP sparse reconstruction
-* [x] COLMAP dense reconstruction
-* [x] Raw point cloud exported
-* [x] Point cloud viewed in Open3D
-* [x] Point cloud cleaned
-* [x] Basic spatial analysis
-* [ ] Segmentation
-* [ ] Demo video/writeup
+- [x] Dataset organized
+- [x] COLMAP sparse reconstruction
+- [x] COLMAP dense reconstruction
+- [x] Point-cloud cleanup
+- [x] Basic spatial analysis
+- [x] Ground / non-ground segmentation
+- [x] Surface-region extraction
+- [x] Coarse semantic classification
+- [ ] App / interactive demo
+- [ ] Demo video / writeup
 
-## Long-Term Vision
+## Long-Term Direction
 
-The long-term goal is to turn this into a portfolio-quality project showing how drone imagery can be converted into a useful 3D digital twin.
-
-Final version should demonstrate:
-
-* End-to-end reconstruction pipeline
-* Clean point cloud processing
-* Useful measurements and analysis
-* Segmentation of meaningful scene regions
-* Clear visual demo
-* Well-documented engineering decisions
+The next maintainability step is to move stable script logic into a small
+library under `src/`, leaving scripts as thin command-line entry points. That
+will make the same pipeline easier to call from a future app.
