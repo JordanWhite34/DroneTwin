@@ -1,3 +1,17 @@
+"""Run the COLMAP photogrammetry pipeline from raw images to dense outputs.
+
+How it works:
+- Feature extraction finds visual keypoints in each uploaded/drone image.
+- Sequential matching links keypoints between neighboring images in flight order.
+- Mapping estimates camera poses and builds the sparse reconstruction.
+- Image undistortion prepares the sparse model for dense stereo.
+- Patch-match stereo estimates per-image depth maps.
+- Stereo fusion merges depth maps into `fused-keep-more.ply`, the dense point
+  cloud used by the Open3D cleanup and segmentation scripts.
+- Optional meshing/texturing stages produce viewable mesh artifacts, but the
+  segmentation workflow primarily uses the fused PLY point cloud.
+"""
+
 import subprocess
 import argparse
 import shutil

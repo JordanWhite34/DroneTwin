@@ -1,3 +1,14 @@
+"""Inspect a cleaned point cloud and print basic scene measurements.
+
+How it works:
+- Loads the cleaned dense PLY produced by `clean_point_cloud.py`.
+- Uses the axis-aligned bounding box for rough width/depth/height estimates.
+- Uses Z-coordinate statistics for elevation summaries.
+- Uses nearest-neighbor distances to estimate point spacing and reconstruction
+  density; that spacing also informs later cleanup and segmentation thresholds.
+- Colors points by normalized height so elevation structure is easy to inspect.
+"""
+
 from pathlib import Path
 
 import numpy as np

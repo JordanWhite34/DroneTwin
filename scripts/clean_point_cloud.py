@@ -17,6 +17,17 @@ The cleanup stages run in this order:
 2. Statistical outlier removal for sparse isolated points.
 3. Optional radius outlier removal for local-density filtering.
 4. Optional voxel downsampling for file-size reduction.
+
+How the calculations work:
+
+- Statistical filtering compares each point's mean neighbor distance against the
+  cloud-wide distribution and removes points that are unusually isolated.
+- Radius filtering removes points that do not have enough neighbors inside a
+  fixed local radius; it is stricter and more scene-scale dependent.
+- Voxel downsampling divides space into small cubes and keeps one representative
+  point per cube, preserving shape while reducing file size.
+- `voxel_fraction` derives cube size from the bounding-box diagonal so defaults
+  remain usable when COLMAP outputs different scene units.
 """
 
 import argparse

@@ -51,6 +51,34 @@ data\processed\dense\region_class_report.csv
 data\processed\dense\semantic_class_legend.csv
 ```
 
+## How It Works
+
+The pipeline is geometry-first, not ML-first. Each script writes an inspectable
+artifact so the next stage can be checked visually before trusting later labels.
+
+- `run_colmap.py` reconstructs the scene from overlapping drone images. COLMAP
+  extracts image features, matches them across neighboring photos, estimates
+  camera poses, builds a sparse model, computes dense depth maps, and fuses
+  those depth maps into a dense PLY point cloud.
+- `clean_point_cloud.py` removes isolated reconstruction noise and optionally
+  downsamples the cloud. Statistical filtering removes points whose neighbor
+  distances are unusually large; voxel downsampling keeps one representative
+  point per small 3D grid cell.
+- `analyze_point_cloud.py` prints scene dimensions, height statistics, and
+  nearest-neighbor spacing. The spacing is useful because later thresholds need
+  to scale with the density of the current reconstruction.
+- `segment_point_cloud.py` uses RANSAC to fit the dominant plane in the cleaned
+  cloud. Points close to that plane become `ground.ply`; everything else becomes
+  `non_ground.ply`.
+- `region_grow_non_ground.py` groups non-ground points into connected surface
+  patches. It works on a voxel proxy, estimates normals and height above the
+  ground plane, connects nearby voxels with similar surface direction and small
+  height jumps, then transfers labels back to the full-resolution cloud.
+- `classify_regions.py` assigns coarse classes with transparent rules. It
+  computes region features such as roughness, planarity, height variation,
+  footprint fill, aspect ratio, and horizontalness, then scores each region as
+  ground, tree, building, water, or other.
+
 ## Semantic Classes
 
 The semantic classifier is intentionally rule-based and inspectable. It computes

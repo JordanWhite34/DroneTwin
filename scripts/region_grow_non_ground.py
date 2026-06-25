@@ -3,6 +3,16 @@
 This script is intentionally small: it builds a voxel proxy, connects nearby
 voxels when their normals and heights are compatible, then transfers region
 labels back to the full-resolution cloud.
+
+How it works:
+- Downsamples `non_ground.ply` into a voxel proxy so region growing is fast.
+- Fits a ground plane from `ground.ply` and measures height above that plane.
+- Estimates proxy normals, then connects neighboring voxels when their surface
+  directions are similar and their height jump is small.
+- Drops tiny regions as noise and transfers each proxy label back to the nearest
+  full-resolution point.
+- Saves both a colored region PLY and an NPZ label sidecar for
+  `classify_regions.py`.
 """
 
 import argparse

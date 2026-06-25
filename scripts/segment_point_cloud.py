@@ -1,3 +1,19 @@
+"""Split the cleaned dense cloud into ground and non-ground points.
+
+How it works:
+- Loads `fused-keep-more-cleaned.ply` from the dense output folder.
+- Estimates the median nearest-neighbor spacing so the RANSAC tolerance scales
+  with the current reconstruction instead of using a fixed magic distance.
+- Fits one dominant plane with Open3D RANSAC; in this quarry workflow that plane
+  is treated as the main ground surface.
+- Writes inlier points to `ground.ply` and all remaining points to
+  `non_ground.ply` for clustering, region growing, and classification.
+
+Important caveat:
+RANSAC finds the largest plane-like surface. If a scene has a wall, roof, or
+other dominant flat surface larger than the terrain, visually inspect the split.
+"""
+
 from pathlib import Path
 
 import numpy as np
@@ -25,9 +41,8 @@ def main() -> None:
 
     print(f"Median nearest-neighbor spacing: {median_spacing:.6f}")
 
-    # RANSAC plane segmentation.
-    # distance_threshold is scene-scale dependent.
-    # Start around 2x-5x median point spacing.
+    # RANSAC plane segmentation. The threshold is intentionally derived from
+    # point spacing because COLMAP scene scale can vary across reconstructions.
     distance_threshold = median_spacing * 8.0
 
     plane_model, inliers = pcd.segment_plane(
