@@ -1,6 +1,6 @@
-# Quarry Digital Twin
+# DroneTwin 3D Mapping Pipeline
 
-This project builds a 3D digital twin of a quarry from drone imagery using
+This project builds a 3D digital twin from overlapping drone imagery using
 COLMAP, Open3D, and transparent geometry-based point-cloud processing.
 
 The current goal is a clean, inspectable pipeline:
@@ -99,6 +99,17 @@ contain water. Enable it explicitly only for datasets where water is expected:
 conda run -n drone-twin python scripts\classify_regions.py --enable-water --view
 ```
 
+## Dataset Attribution
+
+The example imagery used during development is third-party DJI drone imagery.
+Local EXIF metadata identifies the camera as a DJI FC220 and records a capture
+date of `2021-05-25`, but the original dataset page, author, and license are
+not stored in this repository.
+
+Until the original source is recovered, do not redistribute the raw imagery as
+part of the repository. The pipeline is written so users can supply their own
+overlapping drone images under `data\raw`.
+
 ## Repository Structure
 
 ```text
@@ -131,7 +142,7 @@ COLMAP should be installed separately and available from the command line.
 
 Current status:
 
-- [x] Dataset organized
+- [x] Example imagery organized
 - [x] COLMAP sparse reconstruction
 - [x] COLMAP dense reconstruction
 - [x] Point-cloud cleanup

@@ -4,8 +4,8 @@ How it works:
 - Loads `fused-keep-more-cleaned.ply` from the dense output folder.
 - Estimates the median nearest-neighbor spacing so the RANSAC tolerance scales
   with the current reconstruction instead of using a fixed magic distance.
-- Fits one dominant plane with Open3D RANSAC; in this quarry workflow that plane
-  is treated as the main ground surface.
+- Fits one dominant plane with Open3D RANSAC; in this aerial mapping workflow
+  that plane is treated as the main ground surface.
 - Writes inlier points to `ground.ply` and all remaining points to
   `non_ground.ply` for clustering, region growing, and classification.
 
@@ -15,6 +15,7 @@ other dominant flat surface larger than the terrain, visually inspect the split.
 """
 
 from pathlib import Path
+import argparse
 
 import numpy as np
 import open3d as o3d
@@ -27,7 +28,20 @@ GROUND_OUTPUT_PATH = PROJECT_DIR / "data" / "processed" / "dense" / "ground.ply"
 NON_GROUND_OUTPUT_PATH = PROJECT_DIR / "data" / "processed" / "dense" / "non_ground.ply"
 
 
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Split a cleaned point cloud into ground and non-ground points."
+    )
+    parser.add_argument(
+        "--no-view",
+        action="store_true",
+        help="Write outputs without opening the Open3D viewer.",
+    )
+    return parser.parse_args()
+
+
 def main() -> None:
+    args = parse_args()
     pcd = o3d.io.read_point_cloud(str(INPUT_PATH))
 
     if pcd.is_empty():
@@ -64,10 +78,11 @@ def main() -> None:
     ground_cloud.paint_uniform_color([0.2, 0.8, 0.2])      # green-ish
     non_ground_cloud.paint_uniform_color([0.6, 0.6, 0.6])  # gray
 
-    o3d.visualization.draw_geometries(
-        [ground_cloud, non_ground_cloud],
-        window_name="RANSAC segmentation: ground vs non-ground",
-    )
+    if not args.no_view:
+        o3d.visualization.draw_geometries(
+            [ground_cloud, non_ground_cloud],
+            window_name="RANSAC segmentation: ground vs non-ground",
+        )
 
     GROUND_OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
 
