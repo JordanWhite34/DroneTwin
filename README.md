@@ -17,7 +17,13 @@ drone images
 
 ## Pipeline
 
-Run the stages in this order from the project root:
+For a full rebuild from raw overlapping images in `data\raw`, run COLMAP first:
+
+```powershell
+conda run -n drone-twin python scripts\run_colmap.py
+```
+
+Then run the Open3D post-processing stages:
 
 ```powershell
 conda run -n drone-twin python scripts\clean_point_cloud.py
@@ -137,6 +143,13 @@ pip install -r requirements.txt
 ```
 
 COLMAP should be installed separately and available from the command line.
+
+`run_colmap.py` looks for COLMAP in this order:
+
+1. `--colmap C:\path\to\COLMAP.bat`
+2. `DRONETWIN_COLMAP`
+3. `colmap` on `PATH`
+4. `C:\Tools\COLMAP\COLMAP.bat` if present on this machine
 
 ## Project Status
 
