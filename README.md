@@ -3,7 +3,7 @@
 This project builds a 3D digital twin from overlapping drone imagery using
 COLMAP, Open3D, and transparent geometry-based point-cloud processing.
 
-The current goal is a clean, inspectable pipeline:
+The pipeline is designed to stay clean and inspectable:
 
 ```text
 drone images
@@ -57,6 +57,29 @@ data\processed\dense\region_class_report.csv
 data\processed\dense\semantic_class_legend.csv
 ```
 
+## Results Preview
+
+The repository does not commit raw imagery or generated point-cloud artifacts.
+These PNG previews are rendered from local pipeline outputs:
+
+Cleaned dense point cloud:
+
+![Cleaned dense point cloud](docs/images/cleaned_point_cloud.png)
+
+Region-grown non-ground surfaces:
+
+![Region-grown non-ground surfaces](docs/images/non_ground_regions.png)
+
+Rule-based semantic classes:
+
+![Rule-based semantic classes](docs/images/semantic_classes.png)
+
+Regenerate the previews after rerunning the pipeline:
+
+```powershell
+conda run -n drone-twin python scripts\render_readme_previews.py
+```
+
 ## How It Works
 
 The pipeline is geometry-first, not ML-first. Each script writes an inspectable
@@ -105,17 +128,6 @@ contain water. Enable it explicitly only for datasets where water is expected:
 conda run -n drone-twin python scripts\classify_regions.py --enable-water --view
 ```
 
-## Dataset Attribution
-
-The example imagery used during development is third-party DJI drone imagery.
-Local EXIF metadata identifies the camera as a DJI FC220 and records a capture
-date of `2021-05-25`, but the original dataset page, author, and license are
-not stored in this repository.
-
-Until the original source is recovered, do not redistribute the raw imagery as
-part of the repository. The pipeline is written so users can supply their own
-overlapping drone images under `data\raw`.
-
 ## Repository Structure
 
 ```text
@@ -126,10 +138,14 @@ scripts/
   segment_point_cloud.py     # ground / non-ground split
   region_grow_non_ground.py  # surface-region extraction
   classify_regions.py        # coarse semantic classification
+  render_readme_previews.py   # static preview image renderer
 
 data/
   raw/                       # source imagery, not committed
   processed/                 # generated point clouds/results, not committed
+
+docs/
+  images/                    # committed README preview images
 ```
 
 ## Setup
@@ -150,24 +166,3 @@ COLMAP should be installed separately and available from the command line.
 2. `DRONETWIN_COLMAP`
 3. `colmap` on `PATH`
 4. `C:\Tools\COLMAP\COLMAP.bat` if present on this machine
-
-## Project Status
-
-Current status:
-
-- [x] Example imagery organized
-- [x] COLMAP sparse reconstruction
-- [x] COLMAP dense reconstruction
-- [x] Point-cloud cleanup
-- [x] Basic spatial analysis
-- [x] Ground / non-ground segmentation
-- [x] Surface-region extraction
-- [x] Coarse semantic classification
-- [ ] App / interactive demo
-- [ ] Demo video / writeup
-
-## Long-Term Direction
-
-The next maintainability step is to move stable script logic into a small
-library under `src/`, leaving scripts as thin command-line entry points. That
-will make the same pipeline easier to call from a future app.
